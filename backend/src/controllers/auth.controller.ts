@@ -15,6 +15,7 @@ import bcrypt from "bcryptjs";
 import { uploadToCloudinary } from "../utils/cloudinary";
 import { hashPassword, comparePassword } from "../utils/hashpass";
 import { generateTokens } from "../utils/jwt";
+import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 
 
 //*Send Otp to email for registration
@@ -65,7 +66,7 @@ export const verifyAndRegisterUser = asyncHandler(async (req: Request, res: Resp
     }).send(res);
 });
 
-// SendOtp for login
+//* SendOtp for login
 export const sendOtpForLogin = asyncHandler(async (req: Request, res: Response) => {
     const { email, password } = zodValidator(sendOtpForLoginSchema, req.body);
     const user = await User.findOne({ email });
@@ -83,7 +84,7 @@ export const sendOtpForLogin = asyncHandler(async (req: Request, res: Response) 
     return new ApiResponse(STATUS_CODE.OK, "OTP sent successfully for login", { email }).send(res);
 });
 
-//Verify Otp and Login
+//*Verify Otp and Login
 export const verifyOtpAndLogin = asyncHandler(async (req: Request, res: Response) => {
     const { email, otp } = zodValidator(loginVerifySchema, req.body);
     await verifyOtp(email, otp, OTPAction.LOGIN);
@@ -99,15 +100,15 @@ export const verifyOtpAndLogin = asyncHandler(async (req: Request, res: Response
 
     res.cookie('accessToken', tokens.accessToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', 
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
         maxAge: 30 * 60 * 1000,
     })
     res.cookie('refreshToken', tokens.refreshToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', 
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 * 1000, 
+        maxAge: 30 * 24 * 60 * 60 * 1000,
     })
 
 
@@ -117,3 +118,34 @@ export const verifyOtpAndLogin = asyncHandler(async (req: Request, res: Response
         refreshToken: tokens.refreshToken,
     }).send(res);
 });
+
+//*Get Logged in User
+export const getLoggedinUser = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const user = req.user;
+    if (!user) {
+        throw new ApiError(STATUS_CODE.UNAUTHORIZED, "Unauthorized request");
+    }
+    return new ApiResponse(STATUS_CODE.OK, "User retrieved successfully", {
+        user
+    }).send(res);
+});
+
+//*Logout 
+export const logoutController = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    await User.findByIdAndUpdate(req.user?.userId, { refreshToken: null });
+    
+    res
+        .clearCookie("accessToken", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+        })
+        .clearCookie("refreshToken", {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+        });
+    return new ApiResponse(STATUS_CODE.OK, "Logout successful").send(res);
+});
+
+

@@ -5,14 +5,19 @@ import { STATUS_CODE } from "../constant/statuscode.const";
 import ApiError from "../utils/ApiError";
 import User from "../models/user.model";
 
+export interface AuthenticatedRequest extends Request {
+    user?: JwtPayload;
+}
+
 
 interface JwtPayload {
     userId: string;
     role: string;
 }
 
-export const authMiddleware = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    const token = req.cookies.accessToken || req.headers.authorization?.split(" ")[1];
+export const authMiddleware = asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    console.log(req.cookies, req.headers.cookie)
+    const token = req.cookies?.accessToken || req.headers.authorization?.split(" ")[1];
     if (!token) {
         throw new ApiError(STATUS_CODE.UNAUTHORIZED, "Unauthorized request");
     }
