@@ -4,8 +4,13 @@ export interface IUser extends Document {
     fullName: string;
     username: string;
     email: string;
-    avatar: string;
-    role: 'user' | 'admin';
+    avatar: {
+        url: string;
+        public_id: string;
+    };
+    role: 'user' | 'admin' | 'seller';
+    isSeller: boolean;
+    isSellerRequest: boolean;
     password: string;
     isVerified: boolean;
     refreshToken: string;
@@ -32,13 +37,27 @@ const userSchema: Schema<IUser> = new Schema({
         lowercase: true 
     },
     avatar: {
-        type: String,
-        required: [true, 'Avatar is required'],
+        url: {
+            type: String,
+            required: [true, 'Avatar URL is required']
+        },
+        public_id: {
+            type: String,
+            required: [true, 'Public ID is required']
+        }
     },
     role: {
         type: String,
-        enum: ['user', 'admin'],
+        enum: ['user', 'admin', 'seller'],
         default: 'user'
+    },
+    isSeller: {
+        type: Boolean,
+        default: false
+    },
+    isSellerRequest: {
+        type: Boolean,
+        default: false
     },
     password: {
         type: String,

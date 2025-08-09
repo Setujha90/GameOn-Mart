@@ -34,3 +34,15 @@ export const authMiddleware = asyncHandler(async (req: AuthenticatedRequest, res
     next();
 });
 
+export const isAdmin = asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    const user = await User.findById(req.user?.userId);
+    if (!user) {
+        throw new ApiError(STATUS_CODE.NOT_FOUND, "User not found");
+    }
+
+    if (user.role !== 'admin') {
+        throw new ApiError(STATUS_CODE.FORBIDDEN, "Access denied");
+    }
+
+    next();
+});

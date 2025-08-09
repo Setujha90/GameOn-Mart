@@ -24,3 +24,18 @@ export const loginVerifySchema = z.object({
     email: z.string().email({ message: "Invalid email address" }),
     otp: z.string().length(6, { message: "OTP must be exactly 6 digits" }),
 });
+
+export const sendOtpForResetPasswordSchema = z.object({
+    email: z.string().email({ message: "Invalid email address" }),
+});
+
+export const resetPasswordSchema = z.object({
+    email: z.string().email({ message: "Invalid email address" }),
+    otp: z.string().length(6, { message: "OTP must be exactly 6 digits" }),
+    newPassword: z.string().min(6, { message: "New password must be at least 6 characters" }),
+});
+
+export const updatePasswordSchema = z.object({
+    oldPassword: z.string().min(6, { message: "Old password must be at least 6 characters" }),
+    newPassword: z.string().min(6, { message: "New password must be at least 6 characters" }),
+});

@@ -17,10 +17,20 @@ export async function uploadToCloudinary(localFilePath: string) {
 
         fs.unlinkSync(localFilePath);
 
-        return result.secure_url;
+        return {
+            url: result.secure_url,
+            public_id: result.public_id
+        };
     } catch (error) {
         fs.unlinkSync(localFilePath);
         throw error;
     }
 }
 
+export async function deleteFromCloudinary(publicId: string): Promise<void> {
+    try {
+        await cloudinary.uploader.destroy(publicId);
+    } catch (error) {
+        throw error;
+    }
+}
