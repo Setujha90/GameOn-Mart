@@ -1,6 +1,5 @@
 import { Request, Response } from "express";
 import asyncHandler from "../utils/asyncHandler";
-import { Otp } from "../models/otp.model";
 import ApiResponse from "../utils/ApiResponse";
 import ApiError from "../utils/ApiError";
 import { zodValidator } from "../utils/zodValidator";
@@ -17,7 +16,6 @@ import { hashPassword, comparePassword } from "../utils/hashpass";
 import { generateTokens } from "../utils/jwt";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import jwt from "jsonwebtoken";
-import { file } from "zod/v4/classic/external.cjs";
 
 
 //*Send Otp to email for registration
@@ -305,7 +303,9 @@ export const requestSeller = asyncHandler(async (req: AuthenticatedRequest, res:
     user.isSellerRequest = true;
     await user.save({ validateBeforeSave: false });
 
-    return new ApiResponse(STATUS_CODE.OK, "Seller request sent successfully").send(res);
+    return new ApiResponse(STATUS_CODE.OK, "Seller request sent successfully",
+        user.id
+    ).send(res);
 });
 
 export const approvesSellerRequest = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {

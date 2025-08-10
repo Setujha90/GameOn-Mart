@@ -16,7 +16,7 @@ interface JwtPayload {
 }
 
 export const authMiddleware = asyncHandler(async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    console.log(req.cookies, req.headers.cookie)
+   // console.log(req.cookies, req.headers.cookie)
     const token = req.cookies?.accessToken || req.headers.authorization?.split(" ")[1];
     if (!token) {
         throw new ApiError(STATUS_CODE.UNAUTHORIZED, "Unauthorized request");

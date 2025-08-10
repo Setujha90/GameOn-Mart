@@ -2,7 +2,7 @@ import express, { Application } from 'express';
 import "dotenv/config";
 import connectDB from './config/db';
 import errorHandler from './middlewares/errorHandler';
-import authRouter from './routes/auth.routes';
+import router from './routes/index.routes';
 import cookieParser from 'cookie-parser';
 
 const app: Application = express();
@@ -23,6 +23,6 @@ connectDB().then(() => {
     process.exit(1);
 });
 
-app.use('/api/auth', authRouter);
+app.use('/api', router);
 app.use(errorHandler);
 

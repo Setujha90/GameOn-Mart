@@ -4,18 +4,15 @@ export interface IProduct extends Document {
     name: string;
     description: string;
     price: number;
-    discountPrice?: number;
     images: { public_id: string; url: string }[];
-    category: mongoose.Types.ObjectId;
+    category: string[]; 
     stock: number;
-    sold: number;
-    brand?: string;
     ratings: number;
     numOfReviews: number;
     reviews: {
         user: mongoose.Types.ObjectId;
         name: string;
-        rating: number;
+        rating?: number;
         comment: string;
     }[];
     seller: mongoose.Types.ObjectId;
@@ -40,9 +37,6 @@ const productSchema: Schema<IProduct> = new Schema<IProduct>(
             required: [true, "Please enter product price"],
             max: [9999999, "Price cannot exceed 7 digits"],
         },
-        discountPrice: {
-            type: Number,
-        },
         images: [
             {
                 public_id: {
@@ -56,22 +50,21 @@ const productSchema: Schema<IProduct> = new Schema<IProduct>(
             },
         ],
         category: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: "Category",
-            required: [true, "Please enter product category"],
+            type: [String], 
+            required: [true, "Please provide at least one category"],
+            validate: {
+                validator: function (value: string[]) {
+                    return value.length > 0;
+                },
+                message: "At least one category is required",
+            },
         },
         stock: {
             type: Number,
             required: [true, "Please enter product stock"],
             max: [9999, "Stock cannot exceed 4 digits"],
         },
-        sold: {
-            type: Number,
-            default: 0,
-        },
-        brand: {
-            type: String,
-        },
+    
         ratings: {
             type: Number,
             default: 0,
@@ -93,7 +86,7 @@ const productSchema: Schema<IProduct> = new Schema<IProduct>(
                 },
                 rating: {
                     type: Number,
-                    required: true,
+                    required: false,
                 },
                 comment: {
                     type: String,
@@ -111,4 +104,3 @@ const productSchema: Schema<IProduct> = new Schema<IProduct>(
 );
 
 export const Product = mongoose.model<IProduct>("Product", productSchema);
-
