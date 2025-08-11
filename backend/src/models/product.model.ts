@@ -5,17 +5,17 @@ export interface IProduct extends Document {
     description: string;
     price: number;
     images: { public_id: string; url: string }[];
-    category: string[]; 
+    category: string[];
     stock: number;
     ratings: number;
     numOfReviews: number;
     reviews: {
         user: mongoose.Types.ObjectId;
-        name: string;
+        name?: string;
         rating?: number;
         comment: string;
     }[];
-    seller: mongoose.Types.ObjectId;
+    seller: any;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -50,7 +50,7 @@ const productSchema: Schema<IProduct> = new Schema<IProduct>(
             },
         ],
         category: {
-            type: [String], 
+            type: [String],
             required: [true, "Please provide at least one category"],
             validate: {
                 validator: function (value: string[]) {
@@ -64,7 +64,7 @@ const productSchema: Schema<IProduct> = new Schema<IProduct>(
             required: [true, "Please enter product stock"],
             max: [9999, "Stock cannot exceed 4 digits"],
         },
-    
+
         ratings: {
             type: Number,
             default: 0,
@@ -76,13 +76,13 @@ const productSchema: Schema<IProduct> = new Schema<IProduct>(
         reviews: [
             {
                 user: {
-                    type: mongoose.Schema.Types.ObjectId,
+                    type: mongoose.Types.ObjectId,
                     ref: "User",
                     required: true,
                 },
                 name: {
                     type: String,
-                    required: true,
+                    required: false,
                 },
                 rating: {
                     type: Number,
@@ -95,7 +95,7 @@ const productSchema: Schema<IProduct> = new Schema<IProduct>(
             },
         ],
         seller: {
-            type: mongoose.Schema.Types.ObjectId,
+            type: mongoose.Types.ObjectId,
             ref: "User",
             required: true,
         },

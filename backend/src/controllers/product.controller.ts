@@ -5,15 +5,16 @@ import ApiError from "../utils/ApiError";
 import { zodValidator } from "../utils/zodValidator";
 import { STATUS_CODE } from "../constant/statuscode.const";
 import { createProductSchema, updateProductSchema } from "../zodSchema/product.schema";
-import {Product}from "../models/product.model";
+import { Product } from "../models/product.model";
 import { deleteFromCloudinary, uploadToCloudinary } from "../utils/cloudinary";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
 import User, { IUser } from "../models/user.model";
+import mongoose, { isValidObjectId } from "mongoose";
 
 
 
 export const createProduct = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const { name, description, price,category, stock } = zodValidator(createProductSchema, req.body);
+    const { name, description, price, category, stock } = zodValidator(createProductSchema, req.body);
 
     const localPath = req.file?.path;
     if (!localPath) {
@@ -90,8 +91,22 @@ export const getProductById = asyncHandler(async (req: AuthenticatedRequest, res
     }).send(res);
 });
 
+
 export const getProductsBySeller = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
-    const products = await Product.find({ seller: req.user?.userId }).populate("seller", "fullName");
+    
+    let sellerId;
+
+    if (req.params.sellerId) {
+        sellerId = req.params.sellerId;
+    } else {
+        sellerId = req.user?.userId;
+    }
+    if (!sellerId || !isValidObjectId(sellerId)) {
+        throw new ApiError(STATUS_CODE.BAD_REQUEST, "Invalid seller ID");
+    }
+    
+    const products = await Product.find({ seller: sellerId }).populate("seller", "fullName");
+
     return new ApiResponse(STATUS_CODE.OK, "Products retrieved successfully", {
         products
     }).send(res);
@@ -115,17 +130,25 @@ export const searchProducts = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const updateProduct = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    
     const product = await Product.findById(req.params.id);
     if (!product) {
         throw new ApiError(STATUS_CODE.NOT_FOUND, "Product not found");
     }
+    //console.log("seller:", product.seller.toString());
+   // console.log("user:", req.user?.userId);
+    if (req.user?.role === "seller" && product.seller.toString() !== req.user?.userId) {
+        throw new ApiError(STATUS_CODE.FORBIDDEN, "You can only update products you created");
+    }
+
+
 
     const { name, description, price, category, stock } = zodValidator(updateProductSchema, req.body);
 
-    if(req.file?.path) {
+    if (req.file?.path) {
         const localPath = req.file.path;
         const images = await uploadToCloudinary(localPath);
-        if(!images) {
+        if (!images) {
             throw new ApiError(STATUS_CODE.INTERNAL_SERVER_ERROR, "Failed to upload images");
         }
         product.images = [images];
@@ -148,6 +171,10 @@ export const deleteProduct = asyncHandler(async (req: AuthenticatedRequest, res:
     const product = await Product.findByIdAndDelete(req.params.id);
     if (!product) {
         throw new ApiError(STATUS_CODE.NOT_FOUND, "Product not found");
+    }
+
+    if (req.user?.role === "seller" && product.seller.toString() !== req.user?.userId) {
+        throw new ApiError(STATUS_CODE.FORBIDDEN, "You can only delete products you created");
     }
 
     if (product.images[0].public_id) {
