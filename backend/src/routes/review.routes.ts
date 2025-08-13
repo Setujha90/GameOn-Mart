@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { addOrUpdateReview, deleteReview, getProductReviews, getMyReviews, adminGetAllReviews, getProductRatingInfo } from "../controllers/product.review.controller";
+import { addOrUpdateReview, deleteReview, getProductReviews, getMyReviews, adminGetAllReviews, getProductRatingInfo } from "../controllers/review.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 import { authorizeRoles } from "../middlewares/role.middleware";
 

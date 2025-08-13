@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import asyncHandler from "../utils/asyncHandler";
 import { Product } from "../models/product.model";
-import { addReviewSchema, updateReviewSchema } from "../zodSchema/product.review.schema";
+import { addReviewSchema, updateReviewSchema } from "../zodSchema/review.schema";
 import ApiResponse from "../utils/ApiResponse";
 import { STATUS_CODE } from "../constant/statuscode.const";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
