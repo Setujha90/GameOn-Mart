@@ -4,13 +4,13 @@ import ApiResponse from "../utils/ApiResponse";
 import asyncHandler from "../utils/asyncHandler";
 import { STATUS_CODE } from "../constant/statuscode.const";
 import { zodValidator } from "../utils/zodValidator";
-import Cart from "../models/cart.model";
+import Cart, { ICartItem } from "../models/cart.model";
 import { AuthenticatedRequest } from "../middlewares/auth.middleware";
-import { Product } from "../models/product.model";
+import { IProduct, Product } from "../models/product.model";
 import { addToCartSchema } from "../zodSchema/cart.schema";
-import mongoose from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
 import { isValidObjectId } from "mongoose";
-import { lowercase } from "zod";
+
 
 //* Add product to cart
 export const addProductToCart = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
@@ -40,6 +40,7 @@ export const addProductToCart = asyncHandler(async (req: AuthenticatedRequest, r
         });
     }
     else {
+        
         const existingItemIndex = cart.items.findIndex(item => item.product.toString() === productId);
         if (existingItemIndex >= 0) {
             cart.items[existingItemIndex].quantity += quantity;
@@ -67,21 +68,15 @@ export const getCart = asyncHandler(async (req: AuthenticatedRequest, res: Respo
         throw new ApiError(STATUS_CODE.NOT_FOUND, "Cart not found");
     }
 
+    let productNotExist = 0;
     let totalPrice = 0;
     const cartItems = cart.items.map(item => {
-        const product: any = item.product;
+        const product = item.product as any;
         if (!product) {
-            return {
-                productId: null,
-                name: "Product no longer available",
-                price: 0,
-                quantity: item.quantity,
-                itemTotal: 0,
-                outOfStock: true,
-                lowStock: false
-            };
+            productNotExist++;
+    
         }
-
+        else{ 
         const itemTotal = product.price * item.quantity;
         totalPrice += itemTotal;
 
@@ -95,13 +90,23 @@ export const getCart = asyncHandler(async (req: AuthenticatedRequest, res: Respo
             outOfStock: product.stock <= 0,
             lowStock: product.stock > 0 && product.stock < item.quantity
         };
+    }
+    });
 
+    const updateItem = cartItems.filter(item => !!item);
+    if(productNotExist >0){
+    cart.items = updateItem.map(item => ({
+        product: item.productId,
+        quantity: item.quantity
+    }) as ICartItem);
 
-    })
+    await cart.save({ validateBeforeSave: false });
+}
 
     return new ApiResponse(STATUS_CODE.OK, "Cart retrieved successfully", {
         cart: {
-            items: cartItems,
+            ...(productNotExist > 0 && { productNotExist: `${productNotExist} products not exist in the cart` }),
+            items: updateItem,
             totalPrice
         }
     }).send(res);
@@ -155,6 +160,23 @@ export const updateCartQuantity = asyncHandler(async (req: AuthenticatedRequest,
     if (!cartItem) {
         throw new ApiError(STATUS_CODE.NOT_FOUND, "Product or Item not found in the cart")
     }
+
+    const product = await  Product.findById(cartItem.product);
+    if (!product) {
+        const updatecart = cart.items.filter((item) => item.product.toString() !== productId)
+        cart.items = updatecart ;
+    await cart.save({ validateBeforeSave: false });
+        throw new ApiError(STATUS_CODE.NOT_FOUND, "Product not found");
+    }
+
+    if(product.stock < quantity) {
+        cartItem.quantity = product.stock ;
+        await cart.save({ validateBeforeSave: false });
+        return new ApiResponse(STATUS_CODE.OK, "Cart quantity updated", {
+            cart
+        }).send(res);
+    }
+
 
     
     cartItem.quantity = quantity;

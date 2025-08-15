@@ -101,7 +101,7 @@ export const verifyOtpAndLogin = asyncHandler(async (req: Request, res: Response
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 30 * 60 * 1000,
+        maxAge: 45* 60 * 1000,
     })
     res.cookie('refreshToken', tokens.refreshToken, {
         httpOnly: true,
@@ -179,7 +179,7 @@ export const refreshAccessToken = asyncHandler(async(req: Request, res: Response
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'strict',
-        maxAge: 30 * 60 * 1000,
+        maxAge: 45 * 60 * 1000,
     });
     res.cookie('refreshToken', tokens.refreshToken, {
         httpOnly: true,
