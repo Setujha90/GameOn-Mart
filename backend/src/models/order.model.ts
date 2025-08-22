@@ -1,50 +1,76 @@
-import mongoose, {Document, Schema} from "mongoose";
+import e from "express";
+import mongoose, { Schema, Document } from "mongoose";
 
-export interface IOrderItem {
-    product: mongoose.Types.ObjectId;
-    price: number;
-    quantity: number;
+export interface IPriceBreakdown {
+    orderTotal: number;
+    productPrice: number;
+    deliveryFee: number;
+    platformFee: number;
+    taxes: number;
+    discount: number;
 }
+
+const PriceBreakdownSchema = new Schema<IPriceBreakdown>(
+    {
+        orderTotal: { type: Number, required: true },
+        productPrice: { type: Number, required: true },
+        deliveryFee: { type: Number, default: 0 },
+        platformFee: { type: Number, default: 0 },
+        taxes: { type: Number, default: 0 },
+        discount: { type: Number, default: 0 },
+    },
+    { _id: false }
+);
 
 export interface IOrder extends Document {
     user: mongoose.Types.ObjectId;
-    items: IOrderItem[];
-    totalAmount: number;
+    subTotal: number;
+    payableAmount: number;
+    priceBreakdown: {
+        orderTotal: number;
+        productPrice: number;
+        deliveryFee: number;
+        platformFee: number;
+        taxes: number;
+        discount: number;
+    };
+    payment: mongoose.Types.ObjectId;
+    status: "pending" | "processing" | "confirmed" | "shipped" | "delivered" | "cancelled" | "partially_refunded" | "refunded";
     shippingAddress: {
-        street: string;
+        fullName: string;
+        phone: string;
+        address: string;
         city: string;
         state: string;
         postalCode: string;
         country: string;
     };
-    paymentMethod: "COD" | "UPI" | "Card";
-    paymentStatus: "Pending" | "Completed" | "Failed" | "Refunded";
-    orderStatus: "Pending" | "Processing" | "Shipped" | "Delivered" | "Cancelled" | "Returned";
-    createdAt: Date;
-    updatedAt: Date;
 }
 
-const OrderItemSchema = new Schema<IOrderItem>({
-    product: { type: Schema.Types.ObjectId, ref: "Product", required: true },
-    price: { type: Number, required: true, min: 0 },
-    quantity: { type: Number, required: true, min: 1, default: 1 }
-}, {_id: false});
-
-const OrderSchema = new Schema<IOrder>({
-    user: { type: Schema.Types.ObjectId, ref: "User", required: true },
-    items: {type: [OrderItemSchema], required: true},
-    totalAmount: { type: Number, required: true },
-    shippingAddress: {
-        street: { type: String, required: true },
-        city: { type: String, required: true },
-        state: { type: String, required: true },
-        postalCode: { type: String, required: true },
-        country: { type: String, required: true }
+const OrderSchema = new Schema<IOrder>(
+    {
+        user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        subTotal: { type: Number },
+        payableAmount: { type: Number, required: true },
+        priceBreakdown: { type: PriceBreakdownSchema, required: true },
+        payment: { type: Schema.Types.ObjectId, ref: "Payment" },
+        status: {
+            type: String,
+            enum: ["pending", "processing", "confirmed", "shipped", "delivered", "cancelled", "partially_refunded", "refunded"],
+            default: "pending",
+        },
+        shippingAddress: {
+            fullName: { type: String, required: true },
+            phone: { type: String, required: true },
+            address: { type: String, required: true },
+            city: { type: String, required: true },
+            state: { type: String, required: true },
+            postalCode: { type: String, required: true },
+            country: { type: String, required: true },
+        },
     },
-    paymentMethod: { type: String, enum: ["COD", "UPI", "Card"], required: true },
-    paymentStatus: { type: String, enum: ["Pending", "Completed", "Failed"], default: "Pending" },
-    orderStatus: { type: String, enum: ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"], default: "Pending" }
-}, { timestamps: true });
+    { timestamps: true }
+);
 
 const Order = mongoose.model<IOrder>("Order", OrderSchema);
 export default Order;
